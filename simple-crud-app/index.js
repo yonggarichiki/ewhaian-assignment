@@ -1,9 +1,11 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const productRoute = require('./routes/product.route.js');
+const memberRoute = require('./routes/member.route.js');
+const feedbackRoute = require('./routes/feedback.route.js');
+const { notFound, errorHandler } = require('./middleware/error.middleware.js');
 const app = express();
 
-// .env 파일 로드 (Node 20.12+)
 try {
   if (typeof process.loadEnvFile === 'function') {
     process.loadEnvFile('.env');
@@ -12,18 +14,20 @@ try {
   console.log('Could not load .env file:', error.message);
 }
 
-// Middleware 설정
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Routes 설정
 app.use('/api/products', productRoute);
+app.use('/api/members', memberRoute);
+app.use('/api/feedbacks', feedbackRoute);
 
 app.get('/', (req, res) => {
-  res.send("Hello from Node API Server Updated");
+  res.send('Hello from Node API Server Updated');
 });
 
-// MongoDB 연결 및 서버 실행
+app.use(notFound);
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -32,13 +36,14 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
-mongoose.connect(MONGODB_URI)
+mongoose
+  .connect(MONGODB_URI)
   .then(() => {
-    console.log("Connected to database!");
+    console.log('Connected to database!');
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
   })
   .catch((error) => {
-    console.log("Connection failed!", error.message);
+    console.log('Connection failed!', error.message);
   });
